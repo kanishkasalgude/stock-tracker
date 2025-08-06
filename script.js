@@ -1,88 +1,120 @@
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Global Variables & Chart Initialization ---
+    let currentSymbol = 'AAPL'; // Default stock symbol
+    const searchBar = document.querySelector('.search-bar');
+    const searchBtn = document.querySelector('.search-btn');
+    const chartTitle = document.getElementById('chart-title');
+    const toggleIndicator = document.getElementById('toggle-indicator');
+    const marketToggle = document.getElementById('market-toggle');
+    let isGainers = true;
+    let chartUpdateInterval;
 
-        // Auto-toggle between Top Gainers and Top Losers
-        let isGainers = true;
-        const toggleIndicator = document.getElementById('toggle-indicator');
-        const marketToggle = document.getElementById('market-toggle');
-
-        function toggleMarketStatus() {
-            if (isGainers) {
-                toggleIndicator.textContent = 'TOP LOSERS';
-                marketToggle.className = 'market-toggle losers';
-            } else {
-                toggleIndicator.textContent = 'TOP GAINERS';
-                marketToggle.className = 'market-toggle gainers';
+    // Initialize Chart.js
+    const ctx = document.getElementById('stockChart').getContext('2d');
+    const stockChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Stock Price',
+                data: [],
+                borderColor: '#10B981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: '#cbd5e1' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                y: { ticks: { color: '#cbd5e1', callback: (value) => '$' + value.toFixed(2) }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }
             }
-            isGainers = !isGainers;
         }
+    });
 
-        // Toggle every 5 seconds
-        setInterval(toggleMarketStatus, 5000);
+    // --- API Function ---
+    async function fetchStockPrice(symbol) {
+        // ↓↓↓ REPLACE THIS WITH YOUR SECRET FINNHUB API KEY ↓↓↓
+        const apiKey = 'd29jpspr01qhoencm0bgd29jpspr01qhoencm0c0';
+        const url = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${apiKey}`;
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+            const data = await response.json();
+            if (data.c === 0 && data.h === 0) throw new Error(`Invalid symbol or no data: ${symbol}`);
+            return data;
+        } catch (error) {
+            console.error("Finnhub API Error:", error);
+            alert(`Could not fetch data for "${symbol}". Please check the symbol.`);
+            return null;
+        }
+    }
 
-        // Enhanced interactivity
-        document.addEventListener('DOMContentLoaded', function() {
-            // Search bar interactions
-            const searchBar = document.querySelector('.search-bar');
-            const searchBtn = document.querySelector('.search-btn');
+    // --- Chart & UI Logic ---
+    async function updateData() {
+        const data = await fetchStockPrice(currentSymbol);
+        if (data !== null) {
+            const newPrice = data.c;
+            const change = data.d; // Change from previous close
+            const changePercent = data.dp; // Percent change
+
+            // Update chart color based on performance
+            const chartColor = (change >= 0) ? '#10B981' : '#EF4444';
+            stockChart.data.datasets[0].borderColor = chartColor;
+            stockChart.data.datasets[0].backgroundColor = (change >= 0) ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
             
-            searchBar.addEventListener('focus', function() {
-                this.style.transform = 'translateY(-2px)';
-            });
+            // Update chart title and price info
+            chartTitle.textContent = `${currentSymbol} - $${newPrice.toFixed(2)}`;
+            chartTitle.innerHTML += ` <span style="color: ${chartColor}; font-size: 18px;">(${changePercent.toFixed(2)}%)</span>`;
+
+            // Add new data point to the chart
+            stockChart.data.labels.push(new Date().toLocaleTimeString());
+            stockChart.data.datasets[0].data.push(newPrice);
+
+            // Keep the chart from getting too crowded
+            if (stockChart.data.labels.length > 30) {
+                stockChart.data.labels.shift();
+                stockChart.data.datasets[0].data.shift();
+            }
+            stockChart.update('none');
+        }
+    }
+    
+    // --- Event Listeners ---
+    function searchForStock() {
+        const symbol = searchBar.value.trim().toUpperCase();
+        if (symbol && symbol !== currentSymbol) {
+            currentSymbol = symbol;
+            // Clear old chart data and stop the previous interval
+            stockChart.data.labels = [];
+            stockChart.data.datasets[0].data = [];
+            stockChart.update();
+            if (chartUpdateInterval) clearInterval(chartUpdateInterval);
             
-            searchBar.addEventListener('blur', function() {
-                this.style.transform = 'translateY(0)';
-            });
+            // Immediately fetch data and start the new interval
+            updateData();
+            chartUpdateInterval = setInterval(updateData, 5000);
+        }
+    }
 
-            // Search button functionality
-            searchBtn.addEventListener('click', function() {
-                const searchTerm = searchBar.value.trim();
-                if (searchTerm) {
-                    console.log('Searching for:', searchTerm);
-                    // Add your search logic here
-                    
-                    // Visual feedback
-                    this.style.transform = 'translateY(-3px)';
-                    setTimeout(() => {
-                        this.style.transform = 'translateY(0)';
-                    }, 150);
-                } else {
-                    // Focus search bar if empty
-                    searchBar.focus();
-                }
-            });
+    searchBtn.addEventListener('click', searchForStock);
+    searchBar.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchForStock();
+    });
 
-            // Enter key search
-            searchBar.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    searchBtn.click();
-                }
-            });
-
-            // Stock category button interactions
-            const categoryButtons = document.querySelectorAll('.stock-category-btn');
-            categoryButtons.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    console.log('Selected category:', this.textContent);
-                    // Add your redirect/filter logic here
-                    
-                    // Visual feedback
-                    this.style.transform = 'translateY(-3px)';
-                    setTimeout(() => {
-                        this.style.transform = 'translateY(0)';
-                    }, 150);
-                });
-            });
-
-            // Smooth scroll and enhanced UX
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const target = document.querySelector(this.getAttribute('href'));
-                    if (target) {
-                        target.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start'
-                        });
-                    }
-                });
-            });
-        });
+    // --- Initial Execution ---
+    function toggleMarketStatus() {
+        isGainers = !isGainers;
+        toggleIndicator.textContent = isGainers ? 'TOP GAINERS' : 'TOP LOSERS';
+        marketToggle.className = isGainers ? 'market-toggle gainers' : 'market-toggle losers';
+    }
+    
+    updateData(); // Initial data fetch
+    chartUpdateInterval = setInterval(updateData, 5000); // Refresh chart every 5 seconds
+    setInterval(toggleMarketStatus, 5000); // Toggle banner
+});
