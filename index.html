@@ -6,9 +6,10 @@
     <title>ARTHANETRA - Professional Stock Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script src="script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <!-- Top Navigation Ribbon -->
     <nav class="top-nav">
         <div class="top-nav-container">
             <a href="#" class="nav-item">SETTINGS</a>
@@ -17,31 +18,23 @@
         </div>
     </nav>
 
-    <!-- Market Toggle Ribbon -->
     <div id="market-toggle" class="market-toggle gainers">
         <div class="market-toggle-container">
             <div id="toggle-indicator" class="toggle-indicator">TOP GAINERS</div>
         </div>
     </div>
 
-    <!-- Main Container -->
     <div class="container">
-        <!-- Header Section with Search -->
         <div class="header-section">
-            <!-- Left Side Buttons -->
             <div class="side-buttons">
                 <button class="stock-category-btn">LARGE CAP</button>
                 <button class="stock-category-btn">MID CAP</button>
                 <button class="stock-category-btn">SMALL CAP</button>
             </div>
-
-            <!-- Center Heading -->
             <div class="main-heading-container">
                 <h1 class="main-heading">ARTHANETRA</h1>
                 <p class="subtitle">Your Financial Vision, Simplified.</p>
             </div>
-
-            <!-- Right Side Buttons -->
             <div class="side-buttons">
                 <button class="stock-category-btn">IT STOCKS</button>
                 <button class="stock-category-btn">BANKING</button>
@@ -49,24 +42,24 @@
             </div>
         </div>
 
-        <!-- Search Container -->
         <div class="search-container">
-            <input type="text" class="search-bar" placeholder="Search Any Stock">
-            <span class="search-icon">🔍︎</span>
+            <input type="text" class="search-bar" placeholder="Search Any Stock (e.g., MSFT, GOOGL)">
             <button class="search-btn">Search</button>
         </div>
 
-        <!-- Main Content Area -->
+        <div class="chart-section">
+            <h2 id="chart-title" class="chart-title-heading">Live Chart</h2>
+            <div class="chart-container">
+                <canvas id="stockChart"></canvas>
+            </div>
+        </div>
+
         <div class="main-content">
-            <!-- Stocks Table Section -->
             <div class="stocks-section">
                 <div class="stocks-header">
                     <h2 class="stocks-title">Stock Portfolio</h2>
                     <div class="filters-dropdown">
-                        <button class="filters-btn">
-                            FILTERS
-                            <span class="dropdown-arrow">▼</span>
-                        </button>
+                        <button class="filters-btn">FILTERS <span class="dropdown-arrow">▼</span></button>
                     </div>
                 </div>
                 <table class="stocks-table">
@@ -81,9 +74,7 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td colspan="5" class="table-placeholder">
-                                Stock data will be dynamically loaded here
-                            </td>
+                            <td colspan="5" class="table-placeholder">Stock data will be dynamically loaded here.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -91,6 +82,6 @@
         </div>
     </div>
 
-    <script src = "script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
