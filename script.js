@@ -179,13 +179,7 @@ function initializeEventListeners() {
         });
     });
 
-    // FAB menu
-    const mainFab = document.getElementById('main-fab');
-    const fabMenu = document.getElementById('fab-menu');
-    
-    mainFab.addEventListener('click', () => {
-        fabMenu.classList.toggle('active');
-    });
+   
 
     // Sub FAB actions
     document.querySelectorAll('.sub-fab').forEach(fab => {
