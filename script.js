@@ -344,19 +344,19 @@ function loadPopularStocks() {
     const container = document.getElementById('popular-stocks-grid');
     
     container.innerHTML = popularStocks.map(stock => `
-        <div class="stock-card" onclick="selectStock('${stock.symbol}')" data-aos="fade-up">
-            <div class="stock-header">
-                <div>
-                    <div class="stock-symbol">${stock.symbol}</div>
-                    <div class="stock-name">${stock.name}</div>
-                </div>
-                <div class="stock-price">$${stock.price.toFixed(2)}</div>
+       <div class="stock-card ${stock.change >= 0 ? 'positive-change' : 'negative-change'}" onclick="selectStock('${stock.symbol}')" data-aos="fade-up">
+        <div class="stock-header">
+            <div>
+                <div class="stock-symbol">${stock.symbol}</div>
+                <div class="stock-name">${stock.name}</div>
             </div>
-            <div class="stock-change ${stock.change >= 0 ? 'positive' : 'negative'}">
-                ${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}%
-            </div>
+            <div class="stock-price">$${stock.price.toFixed(2)}</div>
         </div>
-    `).join('');
+        <div class="stock-change ${stock.change >= 0 ? 'positive' : 'negative'}">
+            ${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}%
+        </div>
+    </div>
+`).join('');
 }
 
 // Portfolio Data
