@@ -3,85 +3,241 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARTHANETRA - Professional Stock Tracker</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js"></script>
+    <title>ARTHANETRA - Premium Stock Tracker</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <nav class="top-nav">
-        <div class="top-nav-container">
-            <a href="#" class="nav-item">SETTINGS</a>
-            <a href="#" class="nav-item">WATCHLIST</a>
-            <a href="#" class="nav-item">ABOUT US</a>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo">ARTHANETRA</div>
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Initializing Market Data...</div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar" data-aos="fade-down">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span class="brand-icon">📈</span>
+                <span class="brand-text">ARTHANETRA</span>
+            </div>
+            
+            <div class="nav-links">
+                <a href="#" class="nav-link" data-tooltip="View your saved stocks">
+                    <span class="nav-icon">⭐</span>
+                    <span>Watchlist</span>
+                </a>
+                <a href="#" class="nav-link" data-tooltip="Market analysis tools">
+                    <span class="nav-icon">📊</span>
+                    <span>Analytics</span>
+                </a>
+                <a href="#" class="nav-link" data-tooltip="App preferences">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Settings</span>
+                </a>
+            </div>
+
+            <div class="nav-controls">
+                <button id="theme-toggle" class="theme-toggle" data-tooltip="Toggle theme">
+                    <span class="theme-icon">🌙</span>
+                </button>
+                <button class="mobile-menu-btn" id="mobile-menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
         </div>
     </nav>
 
-    <div id="market-toggle" class="market-toggle gainers">
-        <div class="market-toggle-container">
-            <div id="toggle-indicator" class="toggle-indicator">TOP GAINERS</div>
+    <!-- Market Status Banner -->
+    <div id="market-banner" class="market-banner" data-aos="fade-in">
+        <div class="market-content">
+            <div class="market-status">
+                <span class="status-dot"></span>
+                <span id="market-status-text">Market Open</span>
+            </div>
+            <div class="market-time" id="market-time"></div>
+            <div class="market-toggle-container">
+                <button id="market-toggle" class="market-toggle-btn">
+                    <span id="toggle-text">TOP GAINERS</span>
+                    <span class="toggle-arrow">→</span>
+                </button>
+            </div>
         </div>
     </div>
 
-    <div class="container">
-        <div class="header-section">
-            <div class="side-buttons">
-                <button class="stock-category-btn">LARGE CAP</button>
-                <button class="stock-category-btn">MID CAP</button>
-                <button class="stock-category-btn">SMALL CAP</button>
-            </div>
-            <div class="main-heading-container">
-                <h1 class="main-heading">ARTHANETRA</h1>
-                <p class="subtitle">Your Financial Vision, Simplified.</p>
-            </div>
-            <div class="side-buttons">
-                <button class="stock-category-btn">IT STOCKS</button>
-                <button class="stock-category-btn">BANKING</button>
-                <button class="stock-category-btn">PHARMA</button>
-            </div>
-        </div>
+    <!-- Main Container -->
+    <div class="main-container">
+        
+        <!-- Hero Section -->
+        <section class="hero-section" data-aos="fade-up">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    <span class="title-main">Your Financial Vision,</span>
+                    <span class="title-accent">Simplified.</span>
+                </h1>
+                <p class="hero-subtitle">Real-time market insights with professional-grade analytics</p>
+                
+                <!-- Enhanced Search -->
+                <div class="search-container">
+                    <div class="search-wrapper">
+                        <input type="text" id="stock-search" class="search-input" placeholder="Search stocks (e.g., AAPL, GOOGL, TSLA)">
+                        <button id="search-btn" class="search-btn">
+                            <span class="search-icon">🔍</span>
+                        </button>
+                    </div>
+                    <div id="search-suggestions" class="search-suggestions"></div>
+                </div>
 
-        <div class="search-container">
-            <input type="text" class="search-bar" placeholder="Search Any Stock (e.g., MSFT, GOOGL)">
-            <button class="search-btn">Search</button>
-        </div>
-
-        <div class="chart-section">
-            <h2 id="chart-title" class="chart-title-heading">Live Chart</h2>
-            <div class="chart-container">
-                <canvas id="stockChart"></canvas>
-            </div>
-        </div>
-
-        <div class="main-content">
-            <div class="stocks-section">
-                <div class="stocks-header">
-                    <h2 class="stocks-title">Stock Portfolio</h2>
-                    <div class="filters-dropdown">
-                        <button class="filters-btn">FILTERS <span class="dropdown-arrow">▼</span></button>
+                <!-- Quick Access Buttons -->
+                <div class="quick-access" data-aos="fade-up" data-aos-delay="200">
+                    <div class="category-group">
+                        <h3 class="category-title">Market Cap</h3>
+                        <div class="category-buttons">
+                            <button class="category-btn" data-category="large-cap">Large Cap</button>
+                            <button class="category-btn" data-category="mid-cap">Mid Cap</button>
+                            <button class="category-btn" data-category="small-cap">Small Cap</button>
+                        </div>
+                    </div>
+                    <div class="category-group">
+                        <h3 class="category-title">Sectors</h3>
+                        <div class="category-buttons">
+                            <button class="category-btn" data-category="tech">Technology</button>
+                            <button class="category-btn" data-category="finance">Banking</button>
+                            <button class="category-btn" data-category="pharma">Pharma</button>
+                        </div>
                     </div>
                 </div>
-                <table class="stocks-table">
+            </div>
+        </section>
+
+        <!-- Chart Section -->
+        <section class="chart-section" data-aos="fade-up" data-aos-delay="300">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div class="chart-title-group">
+                        <h2 id="chart-title" class="chart-title">AAPL - Apple Inc.</h2>
+                        <div class="price-info">
+                            <span id="current-price" class="current-price">$150.00</span>
+                            <span id="price-change" class="price-change positive">+2.5%</span>
+                        </div>
+                    </div>
+                    <div class="chart-controls">
+                        <div class="time-range-selector">
+                            <button class="time-btn active" data-range="1D">1D</button>
+                            <button class="time-btn" data-range="1W">1W</button>
+                            <button class="time-btn" data-range="1M">1M</button>
+                            <button class="time-btn" data-range="1Y">1Y</button>
+                        </div>
+                        <button id="refresh-chart" class="refresh-btn" data-tooltip="Refresh data">
+                            <span class="refresh-icon">🔄</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="chart-wrapper">
+                    <canvas id="stock-chart"></canvas>
+                </div>
+                
+                <div class="chart-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Volume</span>
+                        <span id="volume" class="stat-value">1.2M</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">High/Low</span>
+                        <span id="high-low" class="stat-value">$152/$148</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Last Update</span>
+                        <span id="last-update" class="stat-value">--:--:--</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Popular Stocks Section -->
+        <section class="popular-stocks" data-aos="fade-up" data-aos-delay="400">
+            <h2 class="section-title">Popular Stocks</h2>
+            <div class="stocks-grid" id="popular-stocks-grid">
+                <!-- Popular stocks will be dynamically loaded here -->
+            </div>
+        </section>
+
+        <!-- Portfolio Section -->
+        <section class="portfolio-section" data-aos="fade-up" data-aos-delay="500">
+            <div class="portfolio-header">
+                <h2 class="section-title">Stock Portfolio</h2>
+                <div class="portfolio-controls">
+                    <button class="filter-btn" id="filter-btn">
+                        <span>Filters</span>
+                        <span class="filter-icon">⚡</span>
+                    </button>
+                    <button class="export-btn" data-tooltip="Export data">
+                        <span>Export</span>
+                        <span>📊</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="portfolio-table-container">
+                <table class="portfolio-table" id="portfolio-table">
                     <thead>
                         <tr>
-                            <th>Company Name</th>
-                            <th>Sub Sector</th>
+                            <th>Company</th>
+                            <th>Symbol</th>
+                            <th>Price</th>
+                            <th>Change</th>
                             <th>Market Cap</th>
-                            <th>Closing Price</th>
-                            <th>PE Ratio</th>
+                            <th>Volume</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td colspan="5" class="table-placeholder">Stock data will be dynamically loaded here.</td>
-                        </tr>
+                    <tbody id="portfolio-tbody">
+                        <!-- Portfolio data will be loaded here -->
                     </tbody>
                 </table>
             </div>
+        </section>
+    </div>
+
+    <!-- Floating Action Button -->
+    <div class="fab-container">
+        <button id="main-fab" class="fab main-fab" data-tooltip="Quick Actions">
+            <span class="fab-icon">+</span>
+        </button>
+        <div class="fab-menu" id="fab-menu">
+            <button class="fab sub-fab" data-action="add-stock" data-tooltip="Add to Watchlist">
+                <span>⭐</span>
+            </button>
+            <button class="fab sub-fab" data-action="share" data-tooltip="Share">
+                <span>📤</span>
+            </button>
+            <button class="fab sub-fab" data-action="alert" data-tooltip="Set Alert">
+                <span>🔔</span>
+            </button>
         </div>
     </div>
 
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Scripts -->
     <script src="script.js"></script>
 </body>
 </html>
