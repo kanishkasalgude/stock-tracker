@@ -1,120 +1,649 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // --- Global Variables & Chart Initialization ---
-    let currentSymbol = 'AAPL'; // Default stock symbol
-    const searchBar = document.querySelector('.search-bar');
-    const searchBtn = document.querySelector('.search-btn');
-    const chartTitle = document.getElementById('chart-title');
-    const toggleIndicator = document.getElementById('toggle-indicator');
-    const marketToggle = document.getElementById('market-toggle');
-    let isGainers = true;
-    let chartUpdateInterval;
+// Global Variables
+let stockChart;
+let currentSymbol = 'AAPL';
+let currentTheme = 'dark';
+let isMarketOpen = true;
+let refreshInterval;
+let priceData = [];
+let timeLabels = [];
 
-    // Initialize Chart.js
-    const ctx = document.getElementById('stockChart').getContext('2d');
-    const stockChart = new Chart(ctx, {
+// Popular stocks data
+const popularStocks = [
+    { symbol: 'AAPL', name: 'Apple Inc.', price: 150.00, change: 2.5 },
+    { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 2800.00, change: -1.2 },
+    { symbol: 'MSFT', name: 'Microsoft Corp.', price: 300.00, change: 1.8 },
+    { symbol: 'TSLA', name: 'Tesla Inc.', price: 800.00, change: 3.2 },
+    { symbol: 'AMZN', name: 'Amazon.com Inc.', price: 3200.00, change: -0.5 },
+    { symbol: 'META', name: 'Meta Platforms', price: 200.00, change: 2.1 },
+    { symbol: 'NVDA', name: 'NVIDIA Corp.', price: 450.00, change: 4.5 },
+    { symbol: 'NFLX', name: 'Netflix Inc.', price: 400.00, change: -2.3 }
+];
+
+// Stock suggestions for search
+const stockSuggestions = [
+    'AAPL', 'GOOGL', 'MSFT', 'TSLA', 'AMZN', 'META', 'NVDA', 'NFLX',
+    'JPM', 'JNJ', 'V', 'PG', 'UNH', 'HD', 'MA', 'DIS', 'PYPL', 'ADBE',
+    'CRM', 'NFLX', 'CMCSA', 'PEP', 'ABT', 'COST', 'TMO', 'AVGO', 'ACN'
+];
+
+// Initialize Application
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize AOS animations
+    AOS.init({
+        duration: 800,
+        easing: 'ease-in-out',
+        once: true,
+        offset: 100
+    });
+
+    // Hide loading screen
+    setTimeout(() => {
+        document.getElementById('loading-screen').classList.add('hidden');
+    }, 2000);
+
+    // Initialize components
+    initializeChart();
+    initializeEventListeners();
+    initializeMarketTime();
+    loadPopularStocks();
+    loadPortfolioData();
+    
+    // Start real-time updates
+    startRealTimeUpdates();
+    
+    // Initial data load
+    updateStockData();
+});
+
+// Chart Initialization
+function initializeChart() {
+    const ctx = document.getElementById('stock-chart').getContext('2d');
+    
+    stockChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: [],
+            labels: timeLabels,
             datasets: [{
                 label: 'Stock Price',
-                data: [],
-                borderColor: '#10B981',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                borderWidth: 2,
+                data: priceData,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                borderWidth: 3,
                 fill: true,
                 tension: 0.4,
-                pointRadius: 0
+                pointBackgroundColor: '#6366f1',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 6
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#6366f1',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return `$${context.parsed.y.toFixed(2)}`;
+                        }
+                    }
+                }
+            },
             scales: {
-                x: { ticks: { color: '#cbd5e1' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
-                y: { ticks: { color: '#cbd5e1', callback: (value) => '$' + value.toFixed(2) }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }
+                x: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        maxTicksLimit: 8
+                    }
+                },
+                y: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        callback: function(value) {
+                            return '$' + value.toFixed(2);
+                        }
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            animation: {
+                duration: 750,
+                easing: 'easeInOutQuart'
             }
         }
     });
+}
 
-    // --- API Function ---
-    async function fetchStockPrice(symbol) {
-        // ↓↓↓ REPLACE THIS WITH YOUR SECRET FINNHUB API KEY ↓↓↓
-        const apiKey = 'd29jpspr01qhoencm0bgd29jpspr01qhoencm0c0';
-        const url = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${apiKey}`;
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`API request failed: ${response.status}`);
-            const data = await response.json();
-            if (data.c === 0 && data.h === 0) throw new Error(`Invalid symbol or no data: ${symbol}`);
-            return data;
-        } catch (error) {
-            console.error("Finnhub API Error:", error);
-            alert(`Could not fetch data for "${symbol}". Please check the symbol.`);
-            return null;
-        }
-    }
+// Event Listeners
+function initializeEventListeners() {
+    // Search functionality
+    const searchInput = document.getElementById('stock-search');
+    const searchBtn = document.getElementById('search-btn');
+    const suggestionsContainer = document.getElementById('search-suggestions');
 
-    // --- Chart & UI Logic ---
-    async function updateData() {
-        const data = await fetchStockPrice(currentSymbol);
-        if (data !== null) {
-            const newPrice = data.c;
-            const change = data.d; // Change from previous close
-            const changePercent = data.dp; // Percent change
+    searchInput.addEventListener('input', handleSearchInput);
+    searchInput.addEventListener('keypress', handleSearchKeypress);
+    searchBtn.addEventListener('click', handleSearch);
 
-            // Update chart color based on performance
-            const chartColor = (change >= 0) ? '#10B981' : '#EF4444';
-            stockChart.data.datasets[0].borderColor = chartColor;
-            stockChart.data.datasets[0].backgroundColor = (change >= 0) ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
-            
-            // Update chart title and price info
-            chartTitle.textContent = `${currentSymbol} - $${newPrice.toFixed(2)}`;
-            chartTitle.innerHTML += ` <span style="color: ${chartColor}; font-size: 18px;">(${changePercent.toFixed(2)}%)</span>`;
+    // Theme toggle
+    document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
 
-            // Add new data point to the chart
-            stockChart.data.labels.push(new Date().toLocaleTimeString());
-            stockChart.data.datasets[0].data.push(newPrice);
+    // Market toggle
+    document.getElementById('market-toggle').addEventListener('click', toggleMarketStatus);
 
-            // Keep the chart from getting too crowded
-            if (stockChart.data.labels.length > 30) {
-                stockChart.data.labels.shift();
-                stockChart.data.datasets[0].data.shift();
-            }
-            stockChart.update('none');
-        }
-    }
-    
-    // --- Event Listeners ---
-    function searchForStock() {
-        const symbol = searchBar.value.trim().toUpperCase();
-        if (symbol && symbol !== currentSymbol) {
-            currentSymbol = symbol;
-            // Clear old chart data and stop the previous interval
-            stockChart.data.labels = [];
-            stockChart.data.datasets[0].data = [];
-            stockChart.update();
-            if (chartUpdateInterval) clearInterval(chartUpdateInterval);
-            
-            // Immediately fetch data and start the new interval
-            updateData();
-            chartUpdateInterval = setInterval(updateData, 5000);
-        }
-    }
-
-    searchBtn.addEventListener('click', searchForStock);
-    searchBar.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') searchForStock();
+    // Time range buttons
+    document.querySelectorAll('.time-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            // Here you would typically load different time range data
+            showToast('Time range updated to ' + e.target.dataset.range, 'success');
+        });
     });
 
-    // --- Initial Execution ---
-    function toggleMarketStatus() {
-        isGainers = !isGainers;
-        toggleIndicator.textContent = isGainers ? 'TOP GAINERS' : 'TOP LOSERS';
-        marketToggle.className = isGainers ? 'market-toggle gainers' : 'market-toggle losers';
+    // Refresh button
+    document.getElementById('refresh-chart').addEventListener('click', () => {
+        updateStockData();
+        animateRefreshButton();
+        showToast('Chart refreshed', 'success');
+    });
+
+    // Category buttons
+    document.querySelectorAll('.category-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const category = e.target.dataset.category;
+            showToast(`Filtering by ${category}`, 'success');
+            // Here you would filter stocks by category
+        });
+    });
+
+    // FAB menu
+    const mainFab = document.getElementById('main-fab');
+    const fabMenu = document.getElementById('fab-menu');
+    
+    mainFab.addEventListener('click', () => {
+        fabMenu.classList.toggle('active');
+    });
+
+    // Sub FAB actions
+    document.querySelectorAll('.sub-fab').forEach(fab => {
+        fab.addEventListener('click', (e) => {
+            const action = e.target.closest('.sub-fab').dataset.action;
+            handleFabAction(action);
+        });
+    });
+
+    // Mobile menu
+    document.getElementById('mobile-menu').addEventListener('click', toggleMobileMenu);
+
+    // Close suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-container')) {
+            suggestionsContainer.style.display = 'none';
+        }
+    });
+}
+
+// Search Functionality
+function handleSearchInput(e) {
+    const query = e.target.value.toLowerCase();
+    const suggestionsContainer = document.getElementById('search-suggestions');
+    
+    if (query.length > 0) {
+        const filteredSuggestions = stockSuggestions.filter(stock => 
+            stock.toLowerCase().includes(query)
+        ).slice(0, 5);
+        
+        if (filteredSuggestions.length > 0) {
+            suggestionsContainer.innerHTML = filteredSuggestions
+                .map(stock => `<div class="suggestion-item" onclick="selectStock('${stock}')">${stock}</div>`)
+                .join('');
+            suggestionsContainer.style.display = 'block';
+        } else {
+            suggestionsContainer.style.display = 'none';
+        }
+    } else {
+        suggestionsContainer.style.display = 'none';
+    }
+}
+
+function handleSearchKeypress(e) {
+    if (e.key === 'Enter') {
+        handleSearch();
+    }
+}
+
+function handleSearch() {
+    const searchInput = document.getElementById('stock-search');
+    const symbol = searchInput.value.trim().toUpperCase();
+    
+    if (symbol && symbol !== currentSymbol) {
+        selectStock(symbol);
+    }
+}
+
+function selectStock(symbol) {
+    currentSymbol = symbol;
+    document.getElementById('stock-search').value = symbol;
+    document.getElementById('search-suggestions').style.display = 'none';
+    
+    // Reset chart data
+    priceData = [];
+    timeLabels = [];
+    
+    // Update chart title
+    document.getElementById('chart-title').textContent = `${symbol} - Loading...`;
+    
+    // Update data
+    updateStockData();
+    
+    showToast(`Switched to ${symbol}`, 'success');
+}
+
+// Stock Data Simulation
+function generateStockData(symbol) {
+    const basePrice = {
+        'AAPL': 150, 'GOOGL': 2800, 'MSFT': 300, 'TSLA': 800,
+        'AMZN': 3200, 'META': 200, 'NVDA': 450, 'NFLX': 400
+    }[symbol] || 100;
+
+    const lastPrice = priceData.length > 0 ? priceData[priceData.length - 1] : basePrice;
+    const volatility = 0.02; // 2% volatility
+    const change = (Math.random() - 0.5) * 2 * volatility * lastPrice;
+    const newPrice = Math.max(lastPrice + change, basePrice * 0.5);
+
+    return {
+        price: newPrice,
+        volume: Math.floor(Math.random() * 5000000) + 1000000,
+        high: newPrice + Math.random() * 10,
+        low: newPrice - Math.random() * 10,
+        change: ((newPrice - basePrice) / basePrice * 100),
+        changeAmount: newPrice - basePrice
+    };
+}
+
+function updateStockData() {
+    const data = generateStockData(currentSymbol);
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('en-US', { 
+        hour12: false, 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+
+    // Add new data point
+    priceData.push(data.price);
+    timeLabels.push(timeString);
+
+    // Keep only last 30 data points
+    if (priceData.length > 30) {
+        priceData.shift();
+        timeLabels.shift();
+    }
+
+    // Update chart colors based on trend
+    const isPositive = data.change >= 0;
+    const color = isPositive ? '#10b981' : '#ef4444';
+    const bgColor = isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+
+    stockChart.data.datasets[0].borderColor = color;
+    stockChart.data.datasets[0].backgroundColor = bgColor;
+    stockChart.data.datasets[0].pointBackgroundColor = color;
+    
+    // Update chart
+    stockChart.update('none');
+
+    // Update UI elements
+    updatePriceDisplay(data);
+    updateChartStats(data);
+}
+
+function updatePriceDisplay(data) {
+    const titleElement = document.getElementById('chart-title');
+    const priceElement = document.getElementById('current-price');
+    const changeElement = document.getElementById('price-change');
+
+    titleElement.textContent = `${currentSymbol} - ${getCompanyName(currentSymbol)}`;
+    priceElement.textContent = `$${data.price.toFixed(2)}`;
+    
+    const changeText = `${data.change >= 0 ? '+' : ''}${data.change.toFixed(2)}%`;
+    changeElement.textContent = changeText;
+    changeElement.className = `price-change ${data.change >= 0 ? 'positive' : 'negative'}`;
+}
+
+function updateChartStats(data) {
+    document.getElementById('volume').textContent = formatVolume(data.volume);
+    document.getElementById('high-low').textContent = `$${data.high.toFixed(0)}/$${data.low.toFixed(0)}`;
+    document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+}
+
+// Popular Stocks
+function loadPopularStocks() {
+    const container = document.getElementById('popular-stocks-grid');
+    
+    container.innerHTML = popularStocks.map(stock => `
+        <div class="stock-card" onclick="selectStock('${stock.symbol}')" data-aos="fade-up">
+            <div class="stock-header">
+                <div>
+                    <div class="stock-symbol">${stock.symbol}</div>
+                    <div class="stock-name">${stock.name}</div>
+                </div>
+                <div class="stock-price">$${stock.price.toFixed(2)}</div>
+            </div>
+            <div class="stock-change ${stock.change >= 0 ? 'positive' : 'negative'}">
+                ${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}%
+            </div>
+        </div>
+    `).join('');
+}
+
+// Portfolio Data
+function loadPortfolioData() {
+    const tbody = document.getElementById('portfolio-tbody');
+    
+    // Sample portfolio data
+    const portfolioData = [
+        { symbol: 'AAPL', company: 'Apple Inc.', price: 150.00, change: 2.5, marketCap: '2.4T', volume: '45.2M' },
+        { symbol: 'GOOGL', company: 'Alphabet Inc.', price: 2800.00, change: -1.2, marketCap: '1.8T', volume: '23.1M' },
+        { symbol: 'MSFT', company: 'Microsoft Corp.', price: 300.00, change: 1.8, marketCap: '2.2T', volume: '32.5M' },
+        { symbol: 'TSLA', company: 'Tesla Inc.', price: 800.00, change: 3.2, marketCap: '800B', volume: '28.9M' }
+    ];
+
+    tbody.innerHTML = portfolioData.map(stock => `
+        <tr onclick="selectStock('${stock.symbol}')" style="cursor: pointer;">
+            <td>
+                <div>
+                    <div style="font-weight: 600; color: var(--text-primary);">${stock.company}</div>
+                    <div style="font-size: 0.9rem; color: var(--text-muted);">${stock.symbol}</div>
+                </div>
+            </td>
+            <td style="font-weight: 600; color: var(--text-primary);">${stock.symbol}</td>
+            <td style="font-weight: 600; font-family: 'Space Grotesk', monospace;">$${stock.price.toFixed(2)}</td>
+            <td>
+                <span class="price-change ${stock.change >= 0 ? 'positive' : 'negative'}">
+                    ${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}%
+                </span>
+            </td>
+            <td style="font-weight: 500;">${stock.marketCap}</td>
+            <td style="color: var(--text-muted);">${stock.volume}</td>
+            <td>
+                <button class="category-btn" onclick="event.stopPropagation(); addToWatchlist('${stock.symbol}')" style="padding: 0.5rem 1rem; font-size: 0.8rem;">
+                    ⭐ Watch
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Utility Functions
+function getCompanyName(symbol) {
+    const companies = {
+        'AAPL': 'Apple Inc.',
+        'GOOGL': 'Alphabet Inc.',
+        'MSFT': 'Microsoft Corp.',
+        'TSLA': 'Tesla Inc.',
+        'AMZN': 'Amazon.com Inc.',
+        'META': 'Meta Platforms',
+        'NVDA': 'NVIDIA Corp.',
+        'NFLX': 'Netflix Inc.'
+    };
+    return companies[symbol] || 'Unknown Company';
+}
+
+function formatVolume(volume) {
+    if (volume >= 1000000) {
+        return (volume / 1000000).toFixed(1) + 'M';
+    } else if (volume >= 1000) {
+        return (volume / 1000).toFixed(1) + 'K';
+    }
+    return volume.toString();
+}
+
+function animateRefreshButton() {
+    const refreshBtn = document.getElementById('refresh-chart');
+    refreshBtn.style.transform = 'rotate(360deg)';
+    setTimeout(() => {
+        refreshBtn.style.transform = 'rotate(0deg)';
+    }, 500);
+}
+
+// Theme Toggle
+function toggleTheme() {
+    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    
+    const themeIcon = document.querySelector('.theme-icon');
+    themeIcon.textContent = currentTheme === 'dark' ? '🌙' : '☀️';
+    
+    showToast(`Switched to ${currentTheme} theme`, 'success');
+}
+
+// Market Status
+function toggleMarketStatus() {
+    const banner = document.getElementById('market-banner');
+    const toggleText = document.getElementById('toggle-text');
+    
+    isMarketOpen = !isMarketOpen;
+    
+    if (isMarketOpen) {
+        banner.classList.remove('losers');
+        toggleText.textContent = 'TOP GAINERS';
+    } else {
+        banner.classList.add('losers');
+        toggleText.textContent = 'TOP LOSERS';
+    }
+}
+
+function initializeMarketTime() {
+    function updateMarketTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('en-US', {
+            timeZone: 'America/New_York',
+            hour12: true,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        
+        document.getElementById('market-time').textContent = `NYSE: ${timeString}`;
     }
     
-    updateData(); // Initial data fetch
-    chartUpdateInterval = setInterval(updateData, 5000); // Refresh chart every 5 seconds
-    setInterval(toggleMarketStatus, 5000); // Toggle banner
+    updateMarketTime();
+    setInterval(updateMarketTime, 1000);
+}
+
+// Real-Time Updates
+function startRealTimeUpdates() {
+    // Update stock data every 3 seconds
+    refreshInterval = setInterval(() => {
+        updateStockData();
+    }, 3000);
+    
+    // Toggle market status every 10 seconds for demo
+    setInterval(toggleMarketStatus, 10000);
+}
+
+// FAB Actions
+function handleFabAction(action) {
+    const fabMenu = document.getElementById('fab-menu');
+    fabMenu.classList.remove('active');
+    
+    switch(action) {
+        case 'add-stock':
+            addToWatchlist(currentSymbol);
+            break;
+        case 'share':
+            shareStock(currentSymbol);
+            break;
+        case 'alert':
+            setAlert(currentSymbol);
+            break;
+    }
+}
+
+function addToWatchlist(symbol) {
+    showToast(`${symbol} added to watchlist`, 'success');
+}
+
+function shareStock(symbol) {
+    if (navigator.share) {
+        navigator.share({
+            title: `${symbol} Stock Data`,
+            text: `Check out ${symbol} on ARTHANETRA - Professional Stock Tracker`,
+            url: window.location.href
+        });
+    } else {
+        // Fallback for browsers that don't support Web Share API
+        navigator.clipboard.writeText(window.location.href);
+        showToast('Link copied to clipboard', 'success');
+    }
+}
+
+function setAlert(symbol) {
+    showToast(`Price alert set for ${symbol}`, 'success');
+}
+
+// Mobile Menu
+function toggleMobileMenu() {
+    const navLinks = document.querySelector('.nav-links');
+    const mobileBtn = document.getElementById('mobile-menu');
+    
+    navLinks.classList.toggle('mobile-active');
+    mobileBtn.classList.toggle('active');
+}
+
+// Toast Notifications
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    
+    container.appendChild(toast);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        toast.style.animation = 'slideOutRight 0.3s ease forwards';
+        setTimeout(() => {
+            container.removeChild(toast);
+        }, 300);
+    }, 3000);
+}
+
+// Keyboard Shortcuts
+document.addEventListener('keydown', (e) => {
+    // Ctrl/Cmd + K for search focus
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('stock-search').focus();
+    }
+    
+    // Escape to close search suggestions
+    if (e.key === 'Escape') {
+        document.getElementById('search-suggestions').style.display = 'none';
+        document.getElementById('stock-search').blur();
+    }
+    
+    // R for refresh
+    if (e.key === 'r' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        updateStockData();
+        animateRefreshButton();
+        showToast('Chart refreshed', 'success');
+    }
+});
+
+// Additional Animations
+const additionalCSS = `
+@media (max-width: 768px) {
+    .nav-links.mobile-active {
+        display: flex;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--secondary-bg);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        border-top: none;
+        flex-direction: column;
+        padding: 1rem;
+        gap: 0.5rem;
+    }
+    
+    .mobile-menu-btn.active span:nth-child(1) {
+        transform: rotate(45deg) translate(5px, 5px);
+    }
+    
+    .mobile-menu-btn.active span:nth-child(2) {
+        opacity: 0;
+    }
+    
+    .mobile-menu-btn.active span:nth-child(3) {
+        transform: rotate(-45deg) translate(7px, -6px);
+    }
+}
+
+@keyframes slideOutRight {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
+`;
+
+// Inject Additional CSS
+const styleSheet = document.createElement('style');
+styleSheet.textContent = additionalCSS;
+document.head.appendChild(styleSheet);
+
+// Performance Optimization
+// Debounce function for search input
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Apply debounce to search input
+const debouncedSearch = debounce(handleSearchInput, 300);
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+});
+
+// Error Handling
+window.addEventListener('error', (e) => {
+    console.error('Application error:', e.error);
+    showToast('An error occurred. Please refresh the page.', 'error');
 });
