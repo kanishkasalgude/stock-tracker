@@ -262,62 +262,83 @@ function selectStock(symbol) {
     showToast(`Switched to ${symbol}`, 'success');
 }
 
-// Stock Data Simulation
-function generateStockData(symbol) {
-    const basePrice = {
-        'AAPL': 150, 'GOOGL': 2800, 'MSFT': 300, 'TSLA': 800,
-        'AMZN': 3200, 'META': 200, 'NVDA': 450, 'NFLX': 400
-    }[symbol] || 100;
+// =========================================================================
+// ==  REALTIME STOCK DATA CODE USING FINNHUB API ==========================
+// =========================================================================
 
-    const lastPrice = priceData.length > 0 ? priceData[priceData.length - 1] : basePrice;
-    const volatility = 0.02; // 2% volatility
-    const change = (Math.random() - 0.5) * 2 * volatility * lastPrice;
-    const newPrice = Math.max(lastPrice + change, basePrice * 0.5);
-
-    return {
-        price: newPrice,
-        volume: Math.floor(Math.random() * 5000000) + 1000000,
-        high: newPrice + Math.random() * 10,
-        low: newPrice - Math.random() * 10,
-        change: ((newPrice - basePrice) / basePrice * 100),
-        changeAmount: newPrice - basePrice
-    };
-}
-
-function updateStockData() {
-    const data = generateStockData(currentSymbol);
-    const now = new Date();
-    const timeString = now.toLocaleTimeString('en-US', { 
-        hour12: false, 
-        hour: '2-digit', 
-        minute: '2-digit' 
-    });
-
-    // Add new data point
-    priceData.push(data.price);
-    timeLabels.push(timeString);
-
-    // Keep only last 30 data points
-    if (priceData.length > 30) {
-        priceData.shift();
-        timeLabels.shift();
-    }
-
-    // Update chart colors based on trend
-    const isPositive = data.change >= 0;
-    const color = isPositive ? '#10b981' : '#ef4444';
-    const bgColor = isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
-
-    stockChart.data.datasets[0].borderColor = color;
-    stockChart.data.datasets[0].backgroundColor = bgColor;
-    stockChart.data.datasets[0].pointBackgroundColor = color;
+// Function to fetch REAL stock data from Finnhub API
+async function updateStockData() {
+    // --- IMPORTANT: PASTE YOUR FINNHUB API KEY HERE ---
+    const apiKey = 'd2aaqs9r01qoad6ou38gd2aaqs9r01qoad6ou390'; 
     
-    // Update chart
-    stockChart.update('none');
+    if (apiKey === 'd2aaqs9r01qoad6ou38gd2aaqs9r01qoad6ou390') {
+        showToast('API Key is missing!', 'error');
+        console.error("Please add your Finnhub API key to the updateStockData function in script.js");
+        return; // Stop the function if the API key is not set
+    }
+    
+    const url = `https://finnhub.io/api/v1/quote?symbol=${currentSymbol}&token=${apiKey}`;
 
-    // Update UI elements
-    updatePriceDisplay(data);
-    updateChartStats(data);
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error('Network response was not successful.');
+        }
+
+        const data = await response.json();
+
+        // Check if the API returned valid data
+        if (data.c === 0 && data.h === 0) {
+             showToast(`No data found for symbol: ${currentSymbol}`, 'warning');
+             console.warn(`Finnhub API returned no data for the symbol: ${currentSymbol}. It might be an invalid ticker.`);
+             return;
+        }
+
+        // --- Data extracted from the API response ---
+        const realData = {
+            price: data.c, // Current price
+            high: data.h,  // High price of the day
+            low: data.l,   // Low price of the day
+            change: data.dp, // Percent change
+            changeAmount: data.d, // Change in price
+            volume: data.c * (Math.random() * 10000) // Finnhub free plan doesn't include volume, so we simulate it
+        };
+        
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('en-US', {
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        // Add new data point for the chart
+        priceData.push(realData.price);
+        timeLabels.push(timeString);
+
+        // Keep only the last 30 data points for a clean chart
+        if (priceData.length > 30) {
+            priceData.shift();
+            timeLabels.shift();
+        }
+        
+        // Update chart colors based on positive or negative change
+        const isPositive = realData.change >= 0;
+        const color = isPositive ? '#10b981' : '#ef4444';
+        const bgColor = isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+
+        stockChart.data.datasets[0].borderColor = color;
+        stockChart.data.datasets[0].backgroundColor = bgColor;
+        stockChart.data.datasets[0].pointBackgroundColor = color;
+
+        // Update the chart and other UI elements with real data
+        stockChart.update('none'); 
+        updatePriceDisplay(realData);
+        updateChartStats(realData);
+
+    } catch (error) {
+        console.error("Failed to fetch real stock data:", error);
+        showToast('Error fetching live data. Check console.', 'error');
+    }
 }
 
 function updatePriceDisplay(data) {
@@ -488,162 +509,3 @@ function startRealTimeUpdates() {
 // FAB Actions
 function handleFabAction(action) {
     const fabMenu = document.getElementById('fab-menu');
-    fabMenu.classList.remove('active');
-    
-    switch(action) {
-        case 'add-stock':
-            addToWatchlist(currentSymbol);
-            break;
-        case 'share':
-            shareStock(currentSymbol);
-            break;
-        case 'alert':
-            setAlert(currentSymbol);
-            break;
-    }
-}
-
-function addToWatchlist(symbol) {
-    showToast(`${symbol} added to watchlist`, 'success');
-}
-
-function shareStock(symbol) {
-    if (navigator.share) {
-        navigator.share({
-            title: `${symbol} Stock Data`,
-            text: `Check out ${symbol} on ARTHANETRA - Professional Stock Tracker`,
-            url: window.location.href
-        });
-    } else {
-        // Fallback for browsers that don't support Web Share API
-        navigator.clipboard.writeText(window.location.href);
-        showToast('Link copied to clipboard', 'success');
-    }
-}
-
-function setAlert(symbol) {
-    showToast(`Price alert set for ${symbol}`, 'success');
-}
-
-// Mobile Menu
-function toggleMobileMenu() {
-    const navLinks = document.querySelector('.nav-links');
-    const mobileBtn = document.getElementById('mobile-menu');
-    
-    navLinks.classList.toggle('mobile-active');
-    mobileBtn.classList.toggle('active');
-}
-
-// Toast Notifications
-function showToast(message, type = 'success') {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    
-    toast.className = `toast ${type}`;
-    toast.textContent = message;
-    
-    container.appendChild(toast);
-    
-    // Auto remove after 3 seconds
-    setTimeout(() => {
-        toast.style.animation = 'slideOutRight 0.3s ease forwards';
-        setTimeout(() => {
-            container.removeChild(toast);
-        }, 300);
-    }, 3000);
-}
-
-// Keyboard Shortcuts
-document.addEventListener('keydown', (e) => {
-    // Ctrl/Cmd + K for search focus
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        document.getElementById('stock-search').focus();
-    }
-    
-    // Escape to close search suggestions
-    if (e.key === 'Escape') {
-        document.getElementById('search-suggestions').style.display = 'none';
-        document.getElementById('stock-search').blur();
-    }
-    
-    // R for refresh
-    if (e.key === 'r' && !e.ctrlKey && !e.metaKey) {
-        e.preventDefault();
-        updateStockData();
-        animateRefreshButton();
-        showToast('Chart refreshed', 'success');
-    }
-});
-
-// Additional Animations
-const additionalCSS = `
-@media (max-width: 768px) {
-    .nav-links.mobile-active {
-        display: flex;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: var(--secondary-bg);
-        backdrop-filter: blur(20px);
-        border: 1px solid var(--glass-border);
-        border-top: none;
-        flex-direction: column;
-        padding: 1rem;
-        gap: 0.5rem;
-    }
-    
-    .mobile-menu-btn.active span:nth-child(1) {
-        transform: rotate(45deg) translate(5px, 5px);
-    }
-    
-    .mobile-menu-btn.active span:nth-child(2) {
-        opacity: 0;
-    }
-    
-    .mobile-menu-btn.active span:nth-child(3) {
-        transform: rotate(-45deg) translate(7px, -6px);
-    }
-}
-
-@keyframes slideOutRight {
-    from { transform: translateX(0); opacity: 1; }
-    to { transform: translateX(100%); opacity: 0; }
-}
-`;
-
-// Inject Additional CSS
-const styleSheet = document.createElement('style');
-styleSheet.textContent = additionalCSS;
-document.head.appendChild(styleSheet);
-
-// Performance Optimization
-// Debounce function for search input
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// Apply debounce to search input
-const debouncedSearch = debounce(handleSearchInput, 300);
-
-// Cleanup on page unload
-window.addEventListener('beforeunload', () => {
-    if (refreshInterval) {
-        clearInterval(refreshInterval);
-    }
-});
-
-// Error Handling
-window.addEventListener('error', (e) => {
-    console.error('Application error:', e.error);
-    showToast('An error occurred. Please refresh the page.', 'error');
-});
