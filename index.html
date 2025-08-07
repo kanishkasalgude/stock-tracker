@@ -5,98 +5,73 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ARTHANETRA - Premium Stock Tracker</title>
     
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- AOS Animation Library -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    
-    <!-- Custom Styles -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Loading Screen -->
     <div id="loading-screen" class="loading-screen">
         <div class="loading-content">
             <div class="loading-logo">ARTHANETRA</div>
             <div class="loading-spinner"></div>
-            <div class="loading-text">Initializing Market Data...</div>
         </div>
     </div>
 
-    <!-- Navigation -->
     <nav class="navbar" data-aos="fade-down">
         <div class="nav-container">
-            <div class="nav-brand">
-                <span class="brand-icon">📈</span>
-                <span class="brand-text">ARTHANETRA</span>
+            <div class="nav-section nav-left">
+                <div class="nav-brand">
+                    <span class="brand-text">ARTHANETRA</span>
+                </div>
+                <div class="nav-market-status">
+                    <span class="status-dot"></span>
+                    <span id="market-status-text">Market Open</span>
+                </div>
             </div>
-            
-            
 
-            <div class="nav-controls">
-                <button id="theme-toggle" class="theme-toggle" data-tooltip="Toggle theme">
-                    <span class="theme-icon">🌙</span>
-                </button>
-                <button class="mobile-menu-btn" id="mobile-menu">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
+            <div class="nav-section nav-center">
+                <span class="top-movers-label">Top Gainers</span>
+                <div id="top-movers-grid" class="top-movers-grid">
+                    </div>
+            </div>
+
+            <div class="nav-section nav-right">
+                <div class="market-time" id="market-time"></div>
+                <div class="more-menu-container">
+                    <span id="more-menu-btn" class="more-menu-btn">More</span>
+                    <div id="more-menu-dropdown" class="more-menu-dropdown">
+                        <a href="#" id="theme-toggle-link">Switch to Dark Mode</a>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>
 
-    <!-- Market Status Banner -->
-    <div id="market-banner" class="market-banner" data-aos="fade-in">
-        <div class="market-content">
-            <div class="market-status">
-                <span class="status-dot"></span>
-                <span id="market-status-text">Market Open</span>
-            </div>
-            <div class="market-time" id="market-time"></div>
-            <div class="market-toggle-container">
-                <button id="market-toggle" class="market-toggle-btn">
-                    <span id="toggle-text">TOP GAINERS</span>
-                    <span class="toggle-arrow">→</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Container -->
     <div class="main-container">
-        
-        <!-- Hero Section -->
         <section class="hero-section" data-aos="fade-up">
             <div class="hero-content">
                 <h1 class="hero-title">
                     <span class="title-main">Your Financial Vision,</span>
                     <span class="title-accent">Simplified.</span>
                 </h1>
-                <p class="hero-subtitle">Real-time stock data, without the noise </p>
+                <p class="hero-subtitle">Real-time stock data, without the noise.</p>
                 
-                <!-- Enhanced Search -->
                 <div class="search-container">
                     <div class="search-wrapper">
                         <input type="text" id="stock-search" class="search-input" placeholder="Search stocks (e.g., AAPL, GOOGL, TSLA)">
-                        <button id="search-btn" class="search-btn">
-                            <span class="search-icon">🔍</span>
-                        </button>
                     </div>
+                    <button id="search-btn" class="search-btn">
+                        <svg class="search-icon-svg" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <span>Search</span>
+                    </button>
                     <div id="search-suggestions" class="search-suggestions"></div>
                 </div>
-
-                
             </div>
         </section>
 
-        <!-- Chart Section -->
-        <section class="chart-section" data-aos="fade-up" data-aos-delay="300">
+        <section class="chart-section" data-aos="fade-up" data-aos-delay="200">
             <div class="chart-container">
                 <div class="chart-header">
                     <div class="chart-title-group">
@@ -113,56 +88,38 @@
                             <button class="time-btn" data-range="1M">1M</button>
                             <button class="time-btn" data-range="1Y">1Y</button>
                         </div>
-                        <button id="refresh-chart" class="refresh-btn" data-tooltip="Refresh data">
-                            <span class="refresh-icon">🔄</span>
-                        </button>
-                        <button id="test-api" class="refresh-btn" data-tooltip="Test API" style="margin-left: 10px;">
-                            <span class="refresh-icon">🧪</span>
+                        <button id="refresh-chart" class="icon-btn" data-tooltip="Refresh data">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M3 21v-5h5"></path></svg>
                         </button>
                     </div>
                 </div>
                 
-                <div class="chart-wrapper">
-                    <canvas id="stock-chart"></canvas>
-                </div>
+                <div class="chart-wrapper"><canvas id="stock-chart"></canvas></div>
                 
                 <div class="chart-stats">
-                    <div class="stat-item">
-                        <span class="stat-label">Volume</span>
-                        <span id="volume" class="stat-value">1.2M</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">High/Low</span>
-                        <span id="high-low" class="stat-value">$152/$148</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Last Update</span>
-                        <span id="last-update" class="stat-value">--:--:--</span>
-                    </div>
+                    <div class="stat-item"><span class="stat-label">Volume</span><span id="volume" class="stat-value">1.2M</span></div>
+                    <div class="stat-item"><span class="stat-label">High/Low</span><span id="high-low" class="stat-value">$152/$148</span></div>
+                    <div class="stat-item"><span class="stat-label">Last Update</span><span id="last-update" class="stat-value">--:--:--</span></div>
                 </div>
             </div>
         </section>
 
-        <!-- Popular Stocks Section -->
-        <section class="popular-stocks" data-aos="fade-up" data-aos-delay="400">
+        <section class="popular-stocks" data-aos="fade-up" data-aos-delay="300">
             <h2 class="section-title">Popular Stocks</h2>
-            <div class="stocks-grid" id="popular-stocks-grid">
-                <!-- Popular stocks will be dynamically loaded here -->
-            </div>
+            <div class="stocks-grid" id="popular-stocks-grid"></div>
         </section>
 
-        <!-- Portfolio Section -->
-        <section class="portfolio-section" data-aos="fade-up" data-aos-delay="500">
+        <section class="portfolio-section" data-aos="fade-up" data-aos-delay="400">
             <div class="portfolio-header">
                 <h2 class="section-title">Stock Portfolio</h2>
                 <div class="portfolio-controls">
-                    <button class="filter-btn" id="filter-btn">
+                    <button class="action-btn" id="filter-btn">
+                        <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                         <span>Filters</span>
-                        <span class="filter-icon">⚡</span>
                     </button>
-                    <button class="export-btn" data-tooltip="Export data">
+                    <button class="action-btn" id="export-btn" data-tooltip="Export as CSV">
+                        <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                         <span>Export</span>
-                        <span>📊</span>
                     </button>
                 </div>
             </div>
@@ -177,21 +134,40 @@
                             <th>Change</th>
                             <th>Market Cap</th>
                             <th>Volume</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="portfolio-tbody">
-                        <!-- Portfolio data will be loaded here -->
-                    </tbody>
+                    <tbody id="portfolio-tbody"></tbody>
                 </table>
             </div>
         </section>
     </div>
     
-    <!-- Toast Notifications -->
+    <div id="filter-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Filter Portfolio</h3>
+                <button id="close-modal-btn" class="close-modal-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="filter-group">
+                    <label>Exchange</label>
+                    <div class="radio-group"><label><input type="radio" name="exchange" value="all" checked> All</label><label><input type="radio" name="exchange" value="nse"> NSE</label><label><input type="radio" name="exchange" value="bse"> BSE</label></div>
+                </div>
+                <div class="filter-group">
+                    <label for="sector-filter">Sector</label>
+                    <select id="sector-filter"><option value="all">All Sectors</option><option value="Technology">Technology</option><option value="Automobile">Automobile</option><option value="Finance">Finance</option><option value="Conglomerate">Conglomerate</option></select>
+                </div>
+                <div class="filter-group">
+                    <label for="market-cap-filter">Market Cap (in Billions)</label>
+                    <input type="range" id="market-cap-filter" min="0" max="3000" value="3000" step="100">
+                    <span id="market-cap-value">$3000B or less</span>
+                </div>
+            </div>
+            <div class="modal-footer"><button id="apply-filters-btn" class="action-btn">Apply Filters</button></div>
+        </div>
+    </div>
     <div id="toast-container" class="toast-container"></div>
 
-    <!-- Scripts -->
     <script src="script.js"></script>
 </body>
 </html>
