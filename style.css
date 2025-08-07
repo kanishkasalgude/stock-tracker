@@ -5,48 +5,45 @@
     box-sizing: border-box;
 }
 
+/* Zerodha-inspired clean blue and light grey color palette */
 :root {
-    /* Color Palette - Dark Violet to Navy Gradient Theme */
-    --primary-bg: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 25%, #16213e 50%, #0f3460 100%);
-    --secondary-bg: rgba(26, 26, 46, 0.8);
-    --glass-bg: rgba(255, 255, 255, 0.1);
-    --glass-border: rgba(255, 255, 255, 0.2);
-    
-    --accent-primary: #6366f1;
-    --accent-secondary: #8b5cf6;
-    --accent-tertiary: #06b6d4;
-    
-    --text-primary: #ffffff;
-    --text-secondary: #cbd5e1;
-    --text-muted: #94a3b8;
-    
-    --success: #10b981;
-    --danger: #ef4444;
-    --warning: #f59e0b;
-    
-    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
-    --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.2);
-    --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.3);
-    
-    --border-radius: 12px;
-    --border-radius-lg: 20px;
-    
+    /* Background Colors */
+    --primary-bg: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 25%, #e2e8f0 50%, #cbd5e1 100%);
+    --secondary-bg: rgba(248, 250, 252, 0.9);
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(203, 213, 225, 0.3);
+
+    /* Accent Colors - Zerodha Blues */
+    --accent-primary: #387adf;    /* Zerodha's primary blue */
+    --accent-secondary: #54a3ff;  /* Lighter blue variant */
+    --accent-tertiary: #0891b2;   /* Teal accent */
+
+    /* Text Colors */
+    --text-primary: #1e293b;      /* Dark slate for primary text */
+    --text-secondary: #475569;    /* Medium slate for secondary text */
+    --text-muted: #64748b;        /* Light slate for muted text */
+
+    /* Status Colors */
+    --success: #059669;           /* Green for success states */
+    --danger: #dc2626;            /* Red for errors/danger */
+    --warning: #d97706;           /* Orange for warnings */
+
+    /* Shadows */
+    --shadow-sm: 0 2px 4px rgba(148, 163, 184, 0.1);
+    --shadow-md: 0 4px 12px rgba(148, 163, 184, 0.15);
+    --shadow-lg: 0 8px 25px rgba(148, 163, 184, 0.2);
+    --shadow-xl: 0 12px 40px rgba(148, 163, 184, 0.25);
+
+    /* Border Radius */
+    --border-radius: 8px;         /* Slightly smaller for cleaner look */
+    --border-radius-lg: 12px;     /* Reduced for Zerodha's style */
+
+    /* Transitions */
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-fast: all 0.15s ease;
 }
 
-/* Light Theme Variables */
-[data-theme="light"] {
-    --primary-bg: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 25%, #cbd5e1 50%, #94a3b8 100%);
-    --secondary-bg: rgba(248, 250, 252, 0.9);
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(0, 0, 0, 0.1);
-    
-    --text-primary: #1e293b;
-    --text-secondary: #475569;
-    --text-muted: #64748b;
-}
+
 
 html {
     scroll-behavior: smooth;
@@ -431,10 +428,12 @@ body {
 }
 
 .category-title {
-    font-size: 1.2rem;
+    font-size: 1.5rem;
     font-weight: 600;
     margin-bottom: 1rem;
     color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .category-buttons {
@@ -447,11 +446,14 @@ body {
     background: rgba(99, 102, 241, 0.1);
     border: 1px solid rgba(99, 102, 241, 0.3);
     color: var(--accent-primary);
-    padding: 0.75rem 1.5rem;
+    padding: 1rem 1.8rem;
     border-radius: var(--border-radius);
     cursor: pointer;
     transition: var(--transition);
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .category-btn:hover {
@@ -464,7 +466,7 @@ body {
 .chart-section {
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
+    border: 2px solid var(--glass-border);
     border-radius: var(--border-radius-lg);
     padding: 2rem;
     margin-bottom: 3rem;
@@ -630,6 +632,16 @@ body {
     overflow: hidden;
 }
 
+.stock-card.positive-change {
+    border-left: 4px solid var(--success);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.02) 0%, var(--glass-bg) 50%);
+}
+
+.stock-card.negative-change {
+    border-left: 4px solid var(--danger);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.02) 0%, var(--glass-bg) 50%);
+}
+
 .stock-card::before {
     content: '';
     position: absolute;
@@ -688,7 +700,7 @@ body {
 .portfolio-section {
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
+    border: 2px solid var(--glass-border);
     border-radius: var(--border-radius-lg);
     padding: 2rem;
     box-shadow: var(--shadow-lg);
@@ -733,6 +745,7 @@ body {
 .portfolio-table-container {
     overflow-x: auto;
     border-radius: var(--border-radius);
+    border: 2px solid var(--glass-border);
 }
 
 .portfolio-table {
@@ -747,13 +760,23 @@ body {
     padding: 1rem;
     text-align: left;
     font-weight: 600;
-    border-bottom: 1px solid var(--glass-border);
+    border-bottom: 2px solid var(--glass-border);
+    border-right: 1px solid var(--glass-border);
+}
+
+.portfolio-table th:last-child {
+    border-right: none;
 }
 
 .portfolio-table td {
     padding: 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--glass-border);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
     color: var(--text-secondary);
+}
+
+.portfolio-table td:last-child {
+    border-right: none;
 }
 
 .portfolio-table tbody tr {
@@ -1015,19 +1038,3 @@ body {
 .mt-2 { margin-top: 1rem; }
 .mt-3 { margin-top: 1.5rem; }
 .mt-4 { margin-top: 2rem; }
-
-.hidden { display: none !important; }
-.visible { display: block !important; }
-
-.fade-in {
-    animation: fadeIn 0.5s ease;
-}
-
-.slide-up {
-    animation: slideUp 0.5s ease;
-}
-
-@keyframes slideUp {
-    from { transform: translateY(30px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
