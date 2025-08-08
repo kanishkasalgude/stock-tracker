@@ -710,3 +710,11 @@ body {
     gap: 10px;
     text-decoration: none; /* <-- THIS LINE REMOVES THE UNDERLINE */
 }
+
+/* Styling for the text next to the logo */
+.brand-text {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--accent-primary); /* This sets the color to your site's accent blue */
+}

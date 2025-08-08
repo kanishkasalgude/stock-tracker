@@ -13,7 +13,7 @@ let showGainers = true;
 // --------------------
 const API_CONFIG = {
     twelveData: {
-        key: '2783d065d79f49e587d6b01bf15245e6',
+        key: '9de7bcaa32684ebfb749fc08a13ccdc1',
         baseUrl: 'https://api.twelvedata.com',
         enabled: true
     }
@@ -110,27 +110,52 @@ async function fetchHistoricalData(symbol, timeRange) {
 /**
  * Main function to update all stock information on the page.
  */
+/**
+ * Main function to update all stock information on the page.
+ */
+/**
+ * Main function to update all stock information on the page.
+ */
 async function updatePageData() {
-    console.log('updatePageData called for:', currentSymbol, currentTimeRange); // Debug line
-    
+    console.log('updatePageData called for:', currentSymbol, currentTimeRange);
+
     try {
-        // For now, just get historical data and skip the quote API
         const history = await fetchHistoricalData(currentSymbol, currentTimeRange);
+
+        // 1. Check if we received valid data
+        if (!history || history.length === 0) {
+            showToast(`No data available for ${currentSymbol}`, 'error');
+            return;
+        }
+
+        // 2. Get the latest and opening data points from the fetched history
+        const latestDataPoint = history[history.length - 1];
+        const firstDataPoint = history[0];
         
-        // Update chart first
-        updateChartDisplay(history);
+        const currentPrice = latestDataPoint.price;
+        const openingPrice = firstDataPoint.price;
         
-        // Update other UI elements with static data
-        const stock = popularStocks.find(s => s.symbol === currentSymbol) || popularStocks[0];
-        document.getElementById('current-price').textContent = `$${stock.price.toFixed(2)}`;
+        // 3. Calculate dynamic values based on the fetched data
+        const change = ((currentPrice - openingPrice) / openingPrice) * 100;
+        const high = Math.max(...history.map(p => p.price));
+        const low = Math.min(...history.map(p => p.price));
+
+        // 4. Update all UI elements with this new dynamic data
+        const stockInfo = popularStocks.find(s => s.symbol === currentSymbol) || { name: 'N/A' };
+        
+        document.getElementById('chart-title').textContent = `${currentSymbol} - ${stockInfo.name}`;
+        document.getElementById('current-price').textContent = `$${currentPrice.toFixed(2)}`;
+        
         const priceChangeEl = document.getElementById('price-change');
-        priceChangeEl.textContent = `${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}%`;
-        priceChangeEl.className = `price-change ${stock.change >= 0 ? 'positive' : 'negative'}`;
+        priceChangeEl.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+        priceChangeEl.className = `price-change ${change >= 0 ? 'positive' : 'negative'}`;
         
-        document.getElementById('volume').textContent = `${(Math.random() * 50).toFixed(1)}M`;
-        document.getElementById('high-low').textContent = `$${(stock.price + 5).toFixed(0)}/$${(stock.price - 5).toFixed(0)}`;
+        document.getElementById('volume').textContent = `${(Math.random() * 50).toFixed(1)}M`; // Keep volume mocked for now
+        document.getElementById('high-low').textContent = `$${high.toFixed(2)}/$${low.toFixed(2)}`;
         document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
-        document.getElementById('chart-title').textContent = `${currentSymbol} - ${stock.name}`;
+        
+        // 5. Finally, update the chart itself
+        updateChartDisplay(history);
 
     } catch (error) {
         console.error("Failed to update page data:", error);
