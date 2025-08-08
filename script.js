@@ -12,7 +12,6 @@ let moreMenuTimeout;
 // --------------------
 const API_CONFIG = {
     twelveData: {
-        // VITAL: Add your personal API key here.
         key: '2783d065d79f49e587d6b01bf15245e6',
         baseUrl: 'https://api.twelvedata.com',
         enabled: true
