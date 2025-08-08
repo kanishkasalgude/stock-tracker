@@ -105,6 +105,11 @@ body {
 }
 
 /* ===== INTEGRATED NAVIGATION BAR (Redesigned) ===== */
+.status-dot.closed {
+    animation: none;
+    background-color: var(--danger);
+}
+
 .navbar {
     position: fixed;
     top: 0;
