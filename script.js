@@ -43,7 +43,7 @@ const popularStocks = [
  * @returns {Promise<object>} A promise that resolves to the stock data object.
  */
 async function fetchStockData(symbol) {
-    if (!API_CONFIG.twelveData.enabled || API_CONFIG.twelveData.key === 'YOUR_API_KEY_HERE') {
+    if (!API_CONFIG.twelveData.enabled || API_CONFIG.twelveData.key === '2783d065d79f49e587d6b01bf15245e6') {
         throw new Error('API not configured. Please add your API key.');
     }
     const url = `${API_CONFIG.twelveData.baseUrl}/quote?symbol=${symbol}&apikey=${API_CONFIG.twelveData.key}`;
@@ -67,49 +67,73 @@ async function fetchStockData(symbol) {
  * @returns {Promise<Array>} A promise that resolves to an array of historical data points.
  */
 async function fetchHistoricalData(symbol, timeRange) {
-    if (!API_CONFIG.twelveData.enabled || API_CONFIG.twelveData.key === 'YOUR_API_KEY_HERE') {
-        throw new Error('API key not found. Cannot fetch live chart data.');
+
+
+    if (!API_CONFIG.twelveData.enabled || API_CONFIG.twelveData.key === '2783d065d79f49e587d6b01bf15245e6') {
+        // Return mock data when API is not configured
+        return generateMockHistoricalData(timeRange); // <-- Pass the timeRange parameter here
     }
-    const intervalMap = { '1D': '5min', '1W': '1h', '1M': '1day', '1Y': '1week' };
-    const url = `${API_CONFIG.twelveData.baseUrl}/time_series?symbol=${symbol}&interval=${intervalMap[timeRange]}&apikey=${API_CONFIG.twelveData.key}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
-    const data = await response.json();
-    if (data.status === 'error' || !data.values) throw new Error(data.message || 'No historical data available.');
-    return data.values.reverse().map(item => ({
-        time: item.datetime,
-        price: parseFloat(item.close)
-    }));
+    
+    const intervalMap = { 
+        '1D': '5min', 
+        '1W': '30min', 
+        '1M': '1day', 
+        '1Y': '1week' 
+    };
+    
+    const outputSizeMap = {
+        '1D': '78',    // 5-min intervals for 1 day
+        '1W': '112',   // 30-min intervals for 1 week
+        '1M': '30',    // Daily intervals for 1 month
+        '1Y': '52'     // Weekly intervals for 1 year
+    };
+    
+    const url = `${API_CONFIG.twelveData.baseUrl}/time_series?symbol=${symbol}&interval=${intervalMap[timeRange]}&outputsize=${outputSizeMap[timeRange]}&apikey=${API_CONFIG.twelveData.key}`;
+    
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+        const data = await response.json();
+        if (data.status === 'error' || !data.values) throw new Error(data.message || 'No historical data available.');
+        return data.values.reverse().map(item => ({
+            time: item.datetime,
+            price: parseFloat(item.close)
+        }));
+    } catch (error) {
+        console.warn('API call failed, using mock data:', error);
+        return generateMockHistoricalData(timeRange); // <-- And here as fallback
+    }
+    
 }
 
 /**
  * Main function to update all stock information on the page.
  */
 async function updatePageData() {
+    console.log('updatePageData called for:', currentSymbol, currentTimeRange); // Debug line
+    
     try {
-        const [quote, history] = await Promise.all([
-            fetchStockData(currentSymbol),
-            fetchHistoricalData(currentSymbol, currentTimeRange)
-        ]);
-
-        // Update main price display
-        document.getElementById('current-price').textContent = `$${quote.price.toFixed(2)}`;
-        const priceChangeEl = document.getElementById('price-change');
-        priceChangeEl.textContent = `${quote.change >= 0 ? '+' : ''}${quote.change.toFixed(2)}%`;
-        priceChangeEl.className = `price-change ${quote.change >= 0 ? 'positive' : 'negative'}`;
-
-        // Update stats
-        document.getElementById('volume').textContent = `${(quote.volume / 1e6).toFixed(1)}M`;
-        document.getElementById('high-low').textContent = `$${quote.high.toFixed(0)}/$${quote.low.toFixed(0)}`;
-        document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
-        document.getElementById('chart-title').textContent = `${currentSymbol} - ${popularStocks.find(s => s.symbol === currentSymbol)?.name || 'Company'}`;
-
-        // Update chart
+        // For now, just get historical data and skip the quote API
+        const history = await fetchHistoricalData(currentSymbol, currentTimeRange);
+        
+        // Update chart first
         updateChartDisplay(history);
+        
+        // Update other UI elements with static data
+        const stock = popularStocks.find(s => s.symbol === currentSymbol) || popularStocks[0];
+        document.getElementById('current-price').textContent = `$${stock.price.toFixed(2)}`;
+        const priceChangeEl = document.getElementById('price-change');
+        priceChangeEl.textContent = `${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}%`;
+        priceChangeEl.className = `price-change ${stock.change >= 0 ? 'positive' : 'negative'}`;
+        
+        document.getElementById('volume').textContent = `${(Math.random() * 50).toFixed(1)}M`;
+        document.getElementById('high-low').textContent = `$${(stock.price + 5).toFixed(0)}/$${(stock.price - 5).toFixed(0)}`;
+        document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+        document.getElementById('chart-title').textContent = `${currentSymbol} - ${stock.name}`;
 
     } catch (error) {
-        showToast(error.message, 'error');
         console.error("Failed to update page data:", error);
+        showToast(error.message, 'error');
     }
 }
 
@@ -117,6 +141,68 @@ async function updatePageData() {
 // =========================================================================
 // ==  CHARTING & UI  =======================================================
 // =========================================================================
+
+/**
+ * Checks if the market is currently open based on US market hours (NYSE/NASDAQ)
+ * Market hours: 9:30 AM - 4:00 PM ET, Monday-Friday
+ * @returns {boolean} True if market is open, false if closed
+ */
+function isMarketOpen() {
+    const now = new Date();
+    
+    // Convert to ET (Eastern Time)
+    const etTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+    
+    // Check if it's a weekday (0 = Sunday, 6 = Saturday)
+    const dayOfWeek = etTime.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+        return false;
+    }
+    
+    // Check if it's within market hours (9:30 AM - 4:00 PM ET)
+    const hours = etTime.getHours();
+    const minutes = etTime.getMinutes();
+    const currentTime = hours * 60 + minutes; // Convert to minutes
+    
+    const marketOpen = 9 * 60 + 30; // 9:30 AM in minutes
+    const marketClose = 16 * 60;    // 4:00 PM in minutes
+    
+    return currentTime >= marketOpen && currentTime <= marketClose;
+}
+
+/**
+ * Updates the market status display in the navigation bar
+ */
+function updateMarketStatus() {
+    const statusText = document.getElementById('market-status-text');
+    const statusDot = document.querySelector('.status-dot');
+    
+    if (isMarketOpen()) {
+        statusText.textContent = 'Market Open';
+        statusDot.style.backgroundColor = 'var(--success)';
+        statusDot.style.animation = 'pulse 2s infinite';
+    } else {
+        statusText.textContent = 'Market Closed';
+        statusDot.style.backgroundColor = 'var(--danger)';
+        statusDot.style.animation = 'none';
+    }
+}
+
+/**
+ * Updates the market time display
+ */
+function updateMarketTime() {
+    const marketTimeEl = document.getElementById('market-time');
+    const etTime = new Date().toLocaleString("en-US", {
+        timeZone: "America/New_York",
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
+    marketTimeEl.textContent = `ET ${etTime}`;
+}
+
 
 /**
  * Initializes the Chart.js instance.
@@ -180,7 +266,23 @@ function updateChartDisplay(history) {
     delete stockChart.options.scales.y.min;
     delete stockChart.options.scales.y.max;
 
-    const labels = history.map(d => new Date(d.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    // Format labels based on current time range
+    const labels = history.map(d => {
+        const date = new Date(d.time);
+        switch (currentTimeRange) {
+            case '1D':
+                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            case '1W':
+                return date.toLocaleDateString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+            case '1M':
+                return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            case '1Y':
+                return date.toLocaleDateString([], { month: 'short', year: '2-digit' });
+            default:
+                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+    });
+
     const dataPoints = history.map(d => d.price);
     const isPositive = dataPoints.length > 1 ? dataPoints[dataPoints.length - 1] >= dataPoints[0] : true;
 
@@ -197,7 +299,62 @@ function updateChartDisplay(history) {
         pointHoverBackgroundColor: isPositive ? 'var(--success)' : 'var(--danger)',
         pointHoverBorderColor: 'var(--secondary-bg)'
     };
-    stockChart.update('none');
+
+     console.log('Chart updated with', dataPoints.length, 'points');
+    
+    // Use 'active' animation for smoother transitions
+    stockChart.update('active');
+}
+
+/**
+ * Generates mock historical data for different time ranges
+ * @param {string} timeRange The time range ('1D', '1W', '1M', '1Y').
+ * @returns {Array} Array of mock historical data points.
+ */
+function generateMockHistoricalData(timeRange) {
+    console.log('Generating mock data for:', timeRange); // Debug line
+    
+    const basePrice = 150;
+    const dataPoints = [];
+    const now = new Date();
+    
+    let intervalMinutes, dataCount;
+    
+    switch (timeRange) {
+        case '1D':
+            intervalMinutes = 5;
+            dataCount = 78;
+            break;
+        case '1W':
+            intervalMinutes = 30;
+            dataCount = 112;
+            break;
+        case '1M':
+            intervalMinutes = 1440;
+            dataCount = 30;
+            break;
+        case '1Y':
+            intervalMinutes = 10080;
+            dataCount = 52;
+            break;
+        default:
+            intervalMinutes = 5;
+            dataCount = 78;
+    }
+    
+    for (let i = dataCount - 1; i >= 0; i--) {
+        const time = new Date(now.getTime() - (i * intervalMinutes * 60000));
+        const randomChange = (Math.random() - 0.5) * 4;
+        const price = basePrice + (Math.sin(i * 0.1) * 10) + randomChange;
+        
+        dataPoints.push({
+            time: time.toISOString(),
+            price: Math.max(price, 100)
+        });
+    }
+    
+    console.log('Generated', dataPoints.length, 'data points'); // Debug line
+    return dataPoints;
 }
 
 
@@ -474,5 +631,10 @@ document.addEventListener('DOMContentLoaded', () => {
         loadPopularStocks();
         updateTopMovers();
         updatePageData();
-    }, 500);
+        updateMarketStatus();
+        updateMarketTime();
+        }, 500);
+        // Update market time every second, market status every 30 seconds
+setInterval(updateMarketTime, 1000);
+setInterval(updateMarketStatus, 30000);
 });
