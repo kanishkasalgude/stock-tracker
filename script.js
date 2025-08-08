@@ -64,7 +64,7 @@ async function fetchHistoricalData(symbol, timeRange) {
 
     if (!API_CONFIG.twelveData.enabled || API_CONFIG.twelveData.key === '2783d065d79f49e587d6b01bf15245e6') {
         // Return mock data when API is not configured
-        return generateMockHistoricalData(timeRange); // <-- Pass the timeRange parameter here
+        return generateMockHistoricalData(timeRange);
     }
     
     const intervalMap = { 
