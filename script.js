@@ -6,6 +6,7 @@ let currentSymbol = 'AAPL';
 let currentTimeRange = '1D';
 let portfolioData = [];
 let moreMenuTimeout;
+let showGainers = true;
 
 // --------------------
 // API CONFIGURATION
@@ -295,7 +296,7 @@ function updateChartDisplay(history) {
         fill: true,
         tension: 0.4,
         pointRadius: 0,
-        pointHoverRadius: 5,
+        pointHoverRadius: 0,
         pointHoverBackgroundColor: isPositive ? 'var(--success)' : 'var(--danger)',
         pointHoverBorderColor: 'var(--secondary-bg)'
     };
@@ -453,18 +454,46 @@ function handleThemeToggle(e) {
 }
 
 /**
- * Updates the market banner with the top 6 performing stocks.
+ * Updates the market banner by filtering for gainers or losers,
+ * sorting them, and handling cases where no stocks match.
  */
 function updateTopMovers() {
     const moversGrid = document.getElementById('top-movers-grid');
-    // Default to showing top 6 gainers
-    const sortedStocks = [...popularStocks].sort((a, b) => b.change - a.change);
-    moversGrid.innerHTML = sortedStocks.slice(0, 6).map(stock => `
-        <div class="mover-card">
-            <div class="mover-symbol">${stock.symbol}</div>
-            <div class="mover-change positive">${stock.change.toFixed(2)}%</div>
-        </div>
-    `).join('');
+    const moversLabel = document.querySelector('.top-movers-label');
+    let filteredStocks;
+
+    if (showGainers) {
+        moversLabel.textContent = 'Top Gainers';
+        // Filter for stocks with positive or zero change.
+        filteredStocks = popularStocks
+            .filter(stock => stock.change >= 0)
+            .sort((a, b) => b.change - a.change);
+    } else {
+        moversLabel.textContent = 'Top Losers';
+        // Filter for stocks with negative change.
+        filteredStocks = popularStocks
+            .filter(stock => stock.change < 0)
+            .sort((a, b) => a.change - b.change);
+    }
+
+    // --- NEW: Check if the filtered list is empty ---
+    if (filteredStocks.length > 0) {
+        // If we have stocks, display them (up to 6)
+        moversGrid.innerHTML = filteredStocks.slice(0, 6).map(stock => {
+            const changeClass = stock.change >= 0 ? 'positive' : 'negative';
+            return `
+                <div class="mover-card">
+                    <div class="mover-symbol">${stock.symbol}</div>
+                    <div class="mover-change ${changeClass}">${stock.change.toFixed(2)}%</div>
+                </div>
+            `;
+        }).join('');
+    } else {
+        // If the list is empty, display a helpful message instead
+        const message = showGainers ? 'No gainers to show.' : 'No losers to show.';
+        // The inline style helps the message span across the entire grid area
+        moversGrid.innerHTML = `<div class="mover-message" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">${message}</div>`;
+    }
 }
 
 /**
@@ -629,7 +658,10 @@ document.addEventListener('DOMContentLoaded', () => {
         initializeEventListeners();
         loadPortfolioData();
         loadPopularStocks();
-        updateTopMovers();
+        setInterval(() => {
+            showGainers = !showGainers; // Flip the state between true and false
+            updateTopMovers();          // Refresh the display
+        }, 5000); // 5000 milliseconds = 5 seconds
         updatePageData();
         updateMarketStatus();
         updateMarketTime();
