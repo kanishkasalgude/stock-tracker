@@ -695,3 +695,18 @@ body {
         transform: scale(1);
     }
 }
+
+/* ===== HEADER LOGO STYLING ===== */
+.header-logo {
+    height: 35px; /* You can adjust this value to make the logo bigger or smaller */
+    width: auto;  /* This maintains the original aspect ratio of your logo */
+    vertical-align: middle; /* Helps keep the logo aligned with other items in the nav bar */
+}
+
+/* Styling for the logo and text container */
+.nav-brand-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none; /* <-- THIS LINE REMOVES THE UNDERLINE */
+}
