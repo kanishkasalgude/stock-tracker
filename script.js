@@ -1,6 +1,4 @@
-// =========================================================================
-// ==  GLOBAL VARIABLES & CONFIG  ===========================================
-// =========================================================================
+//global var
 let stockChart;
 let currentSymbol = 'AAPL';
 let currentTimeRange = '1D';
@@ -8,9 +6,7 @@ let portfolioData = [];
 let moreMenuTimeout;
 let showGainers = true;
 
-// --------------------
-// API CONFIGURATION
-// --------------------
+//API stuff
 const API_CONFIG = {
     twelveData: {
         key: '9de7bcaa32684ebfb749fc08a13ccdc1',
@@ -19,9 +15,7 @@ const API_CONFIG = {
     }
 };
 
-// --------------------
-// STATIC DATA (used for features and as a fallback)
-// --------------------
+//static or default data
 const stockSuggestions = ['AAPL', 'GOOGL', 'MSFT', 'TSLA', 'AMZN', 'META', 'NVDA', 'NFLX', 'JPM', 'JNJ', 'V', 'PG', 'UNH', 'HD', 'MA', 'DIS', 'PYPL', 'ADBE', 'CRM', 'NFLX', 'CMCSA', 'PEP', 'ABT', 'COST', 'TMO', 'AVGO', 'ACN', 'TCS', 'RELIANCE', 'HDFCBANK', 'INFY'];
 const popularStocks = [
     { symbol: 'AAPL', name: 'Apple Inc.', price: 150.00, change: 2.5, sector: 'Technology', exchange: 'nse', marketCap: 2400 },
@@ -34,9 +28,7 @@ const popularStocks = [
     { symbol: 'INFY', name: 'Infosys', price: 1400.00, change: -2.3, sector: 'Technology', exchange: 'bse', marketCap: 80 }
 ];
 
-// =========================================================================
-// ==  API & DATA FETCHING (Restored) =======================================
-// =========================================================================
+//API fetching
 
 /**
  * Fetches real-time quote data for a given stock symbol.
@@ -107,40 +99,32 @@ async function fetchHistoricalData(symbol, timeRange) {
     
 }
 
-/**
- * Main function to update all stock information on the page.
- */
-/**
- * Main function to update all stock information on the page.
- */
-/**
- * Main function to update all stock information on the page.
- */
+//function to update all the data on the page
 async function updatePageData() {
     console.log('updatePageData called for:', currentSymbol, currentTimeRange);
 
     try {
         const history = await fetchHistoricalData(currentSymbol, currentTimeRange);
 
-        // 1. Check if we received valid data
+        // to Check if we received valid data
         if (!history || history.length === 0) {
             showToast(`No data available for ${currentSymbol}`, 'error');
             return;
         }
 
-        // 2. Get the latest and opening data points from the fetched history
+        // to Get the latest and opening data points from the fetched history
         const latestDataPoint = history[history.length - 1];
         const firstDataPoint = history[0];
         
         const currentPrice = latestDataPoint.price;
         const openingPrice = firstDataPoint.price;
         
-        // 3. Calculate dynamic values based on the fetched data
+        // to Calculate dynamic values based on the fetched data
         const change = ((currentPrice - openingPrice) / openingPrice) * 100;
         const high = Math.max(...history.map(p => p.price));
         const low = Math.min(...history.map(p => p.price));
 
-        // 4. Update all UI elements with this new dynamic data
+        //  Update all UI elements with this new dynamic data
         const stockInfo = popularStocks.find(s => s.symbol === currentSymbol) || { name: 'N/A' };
         
         document.getElementById('chart-title').textContent = `${currentSymbol} - ${stockInfo.name}`;
@@ -154,7 +138,7 @@ async function updatePageData() {
         document.getElementById('high-low').textContent = `$${high.toFixed(2)}/$${low.toFixed(2)}`;
         document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
         
-        // 5. Finally, update the chart itself
+        //  after this update the chart itself
         updateChartDisplay(history);
 
     } catch (error) {
@@ -164,9 +148,6 @@ async function updatePageData() {
 }
 
 
-// =========================================================================
-// ==  CHARTING & UI  =======================================================
-// =========================================================================
 
 /**
  * Checks if the market is currently open based on US market hours (NYSE/NASDAQ)
@@ -179,7 +160,7 @@ function isMarketOpen() {
     // Convert to ET (Eastern Time)
     const etTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
     
-    // Check if it's a weekday (0 = Sunday, 6 = Saturday)
+    // Check if it's a weekday (0 = Sunday, 6 = Saturday) (markets closed on saturday sunday)
     const dayOfWeek = etTime.getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) {
         return false;
@@ -196,9 +177,7 @@ function isMarketOpen() {
     return currentTime >= marketOpen && currentTime <= marketClose;
 }
 
-/**
- * Updates the market status display in the navigation bar
- */
+//updating the market status
 function updateMarketStatus() {
     const statusText = document.getElementById('market-status-text');
     const statusDot = document.querySelector('.status-dot');
@@ -214,9 +193,7 @@ function updateMarketStatus() {
     }
 }
 
-/**
- * Updates the market time display
- */
+//updates the market time
 function updateMarketTime() {
     const marketTimeEl = document.getElementById('market-time');
     const etTime = new Date().toLocaleString("en-US", {
@@ -230,9 +207,7 @@ function updateMarketTime() {
 }
 
 
-/**
- * Initializes the Chart.js instance.
- */
+//chart js stuff
 function initializeChart() {
     const ctx = document.getElementById('stock-chart').getContext('2d');
 
@@ -288,7 +263,7 @@ function initializeChart() {
 function updateChartDisplay(history) {
     if (!stockChart || !history || history.length === 0) return;
 
-    // FIX: Ensure axes rescale automatically by removing any fixed min/max
+    
     delete stockChart.options.scales.y.min;
     delete stockChart.options.scales.y.max;
 
@@ -328,7 +303,7 @@ function updateChartDisplay(history) {
 
      console.log('Chart updated with', dataPoints.length, 'points');
     
-    // Use 'active' animation for smoother transitions
+    //for smooth operations
     stockChart.update('active');
 }
 
@@ -401,12 +376,8 @@ function showToast(message, type = 'info') {
     }, 4000);
 }
 
-// =========================================================================
-// ==  FEATURE LOGIC  =======================================================
-// =========================================================================
-/**
- * Handles the search input to show live suggestions.
- */
+//search inputs by short forms
+
 function handleSearchInput() {
     const query = document.getElementById('stock-search').value.toLowerCase();
     const suggestionsContainer = document.getElementById('search-suggestions');
@@ -423,9 +394,7 @@ function handleSearchInput() {
     }
 }
 
-/**
- * Executes the search when the button is clicked.
- */
+//executing the searching operation
 function handleSearch() {
     const symbol = document.getElementById('stock-search').value.trim().toUpperCase();
     if (symbol) {
@@ -433,9 +402,7 @@ function handleSearch() {
     }
 }
 
-/**
- * Executes the search when the Enter key is pressed.
- */
+//executes when ENTER is pressed
 function handleSearchKeypress(event) {
     if (event.key === 'Enter') {
         handleSearch();
@@ -443,9 +410,7 @@ function handleSearchKeypress(event) {
 }
 
 
-/**
- * Sets the current stock and triggers a data refresh.
- */
+//shows a current stock and then refreshes data
 function selectStock(symbol) {
     currentSymbol = symbol.toUpperCase();
     document.getElementById('stock-search').value = currentSymbol;
@@ -454,9 +419,7 @@ function selectStock(symbol) {
     updatePageData();
 }
 
-/**
- * Handles the logic for switching the color theme.
- */
+//switching colour(light to dark or vice versa)
 function handleThemeToggle(e) {
     e.preventDefault();
     const link = document.getElementById('theme-toggle-link');
@@ -478,10 +441,7 @@ function handleThemeToggle(e) {
     }
 }
 
-/**
- * Updates the market banner by filtering for gainers or losers,
- * sorting them, and handling cases where no stocks match.
- */
+//updating the losers gainers market banner
 function updateTopMovers() {
     const moversGrid = document.getElementById('top-movers-grid');
     const moversLabel = document.querySelector('.top-movers-label');
@@ -501,7 +461,7 @@ function updateTopMovers() {
             .sort((a, b) => a.change - b.change);
     }
 
-    // --- NEW: Check if the filtered list is empty ---
+   
     if (filteredStocks.length > 0) {
         // If we have stocks, display them (up to 6)
         moversGrid.innerHTML = filteredStocks.slice(0, 6).map(stock => {
@@ -521,9 +481,7 @@ function updateTopMovers() {
     }
 }
 
-/**
- * Exports the currently visible portfolio data to a CSV file.
- */
+//exporting the data to a csv file
 function exportPortfolioToCSV() {
     const table = document.getElementById('portfolio-table');
     const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.innerText).join(',');
@@ -542,9 +500,7 @@ function exportPortfolioToCSV() {
     showToast('Portfolio exported successfully!', 'success');
 }
 
-/**
- * Applies the selected filters to the portfolio table.
- */
+//applying filters to the stock search/selection
 function applyFilters() {
     const exchange = document.querySelector('input[name="exchange"]:checked').value;
     const sector = document.getElementById('sector-filter').value;
@@ -563,9 +519,7 @@ function applyFilters() {
     showToast('Filters applied', 'info');
 }
 
-/**
- * Populates the popular stocks grid with data.
- */
+//popular stocks
 function loadPopularStocks() {
     const container = document.getElementById('popular-stocks-grid');
     container.innerHTML = popularStocks.map(stock => {
@@ -585,9 +539,7 @@ function loadPopularStocks() {
     }).join('');
 }
 
-/**
- * Populates the main portfolio table with data.
- */
+//main portfolio
 function loadPortfolioData() {
     const tbody = document.getElementById('portfolio-tbody');
     portfolioData = popularStocks.map(stock => ({ ...stock, volume: `${(Math.random() * 50).toFixed(1)}M` }));
@@ -616,13 +568,7 @@ function selectStock(symbol) {
     updatePageData();
 }
 
-// =========================================================================
-// ==  INITIALIZATION  =====================================================
-// =========================================================================
-
-/**
- * Sets up all the initial event listeners for the page.
- */
+//event listeners
 function initializeEventListeners() {
     // Search Bar Logic
     document.getElementById('stock-search').addEventListener('input', handleSearchInput);

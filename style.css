@@ -1,4 +1,4 @@
-/* ===== THEME VARIABLES (Light Theme is Default) ===== */
+/*light theme default*/
 :root {
     --primary-bg: #f4f7fa;
     --secondary-bg: #ffffff;
@@ -27,7 +27,7 @@
     --border-color: #374151;
 }
 
-/* ===== BASE & BODY ===== */
+/* body*/
 * {
     margin: 0;
     padding: 0;
@@ -49,7 +49,7 @@ body {
     background-size: 20px 20px;
 }
 
-/* ===== LOADING SCREEN ===== */
+/*loading screen before opening Arthanetra */
 .loading-screen {
     position: fixed;
     top: 0;
@@ -104,7 +104,7 @@ body {
     }
 }
 
-/* ===== INTEGRATED NAVIGATION BAR (Redesigned) ===== */
+/* navigation bar */
 .status-dot.closed {
     animation: none;
     background-color: var(--danger);
@@ -278,13 +278,13 @@ body {
     color: var(--accent-primary);
 }
 
-/* ===== MAIN CONTENT & HERO SECTION ===== */
+/* main content */
 .main-container {
     max-width: 1400px;
     margin: 0 auto;
     padding: 2rem;
     padding-top: 80px;
-    /* Offset for fixed navbar */
+    
 }
 
 .hero-section {
@@ -516,7 +516,7 @@ body {
     font-size: 1.1rem;
 }
 
-/* Styles for portfolio, buttons, modal, toast, etc. remain the same as previous response */
+/* Styles for portfolio, buttons, etc*/
 .icon-btn,
 .action-btn {
     background: var(--primary-bg);
@@ -696,25 +696,24 @@ body {
     }
 }
 
-/* ===== HEADER LOGO STYLING ===== */
+/* Heading and logo*/
 .header-logo {
-    height: 35px; /* You can adjust this value to make the logo bigger or smaller */
-    width: auto;  /* This maintains the original aspect ratio of your logo */
-    vertical-align: middle; /* Helps keep the logo aligned with other items in the nav bar */
+    height: 35px; 
+    width: auto;  
+    vertical-align: middle; 
 }
 
-/* Styling for the logo and text container */
+
 .nav-brand-link {
     display: flex;
     align-items: center;
     gap: 10px;
-    text-decoration: none; /* <-- THIS LINE REMOVES THE UNDERLINE */
+    text-decoration: none; 
 }
 
-/* Styling for the text next to the logo */
+
 .brand-text {
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 700;
     font-size: 1.5rem;
-    color: var(--accent-primary); /* This sets the color to your site's accent blue */
-}
+    color: var(--accent-primary); 
