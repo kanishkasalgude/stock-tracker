@@ -9,7 +9,7 @@ let showGainers = true;
 //API stuff
 const API_CONFIG = {
     twelveData: {
-        key: '9de7bcaa32684ebfb749fc08a13ccdc1',
+        key: 'YOUR_API_KEY',
         baseUrl: 'https://api.twelvedata.com',
         enabled: true
     }
